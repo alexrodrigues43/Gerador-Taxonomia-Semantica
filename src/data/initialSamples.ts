@@ -1,0 +1,221 @@
+import { FullAnalysisResult } from '../types';
+
+export const SAMPLE_ANALYSIS: FullAnalysisResult = {
+  topic: 'Vinho Tinto',
+  domain: 'ecommerce',
+  language: 'pt-BR',
+  generated_at: '2025-01-15T12:00:00.000Z',
+  taxonomy: {
+    root_topic: 'Vinho Tinto',
+    broader_category: 'Vinhos & Bebidas Fermentadas',
+    subcategories: [
+      {
+        name: 'Varietais e Uvas Nobres',
+        slug: 'varietais-uvas-nobres',
+        description: 'Vinhos classificados pela casta de uva predominante.',
+        topics: [
+          'Cabernet Sauvignon',
+          'Pinot Noir',
+          'Merlot',
+          'Syrah / Shiraz',
+          'Malbec',
+          'Tempranillo',
+        ],
+      },
+      {
+        name: 'Regiões e Terroirs Clássicos',
+        slug: 'regioes-terroirs-classicos',
+        description: 'Classificação geográfica por apelação e clima.',
+        topics: [
+          'Bordeaux (França)',
+          'Toscana / Chianti (Itália)',
+          'Vale do Douro (Portugal)',
+          'Mendoza (Argentina)',
+          'Vale dos Vinhedos (Brasil)',
+          'Rioja (Espanha)',
+        ],
+      },
+      {
+        name: 'Corpo e Estrutura Tânica',
+        slug: 'corpo-estrutura-tanica',
+        description: 'Classificação sensorial e peso em boca.',
+        topics: [
+          'Leves e Frutados',
+          'Médio Corpo Equilibrados',
+          'Encorpados e Potentes',
+          'Madeira e Guarda',
+        ],
+      },
+      {
+        name: 'Ocasião e Harmonização Gastronômica',
+        slug: 'ocasiao-harmonizacao',
+        description: 'Intenções de consumo e pareamento com pratos.',
+        topics: [
+          'Carnes Vermelhas e Churrasco',
+          'Massas com Molho Vermelho',
+          'Queijos Maduros',
+          'Jantar Romântico / Degustação',
+        ],
+      },
+    ],
+    related_entities: [
+      'Sommelier',
+      'Taça de Cristal Bordeaux',
+      'Decanter de Vidro',
+      'Saca-rolhas Sommelier',
+      'Adega Climatizada',
+      'Taninos e Acidez',
+    ],
+    search_intent: {
+      primary: 'Transacional',
+      rationale:
+        'Usuários que buscam "vinho tinto" e variações procuram comprar garrafas específicas para ocasiões, comparar safras e consultar notas de degustação.',
+      user_query_examples: [
+        'melhor vinho tinto bom e barato',
+        'comprar cabernet sauvignon reserva',
+        'vinho tinto suave ou seco diferenças',
+        'harmonização vinho tinto carnes',
+      ],
+    },
+    topic_clusters: [
+      {
+        pillar_title: 'Guia Definitivo do Vinho Tinto: Uvas, Tipos e Harmonizações',
+        slug: 'guia-definitivo-vinho-tinto',
+        cluster_keywords: [
+          'tipos de uvas tintas',
+          'como escolher vinho tinto',
+          'temperatura ideal de serviço',
+          'diferença entre tanino e acidez',
+        ],
+        recommended_schema: 'Article, FAQPage, HowTo',
+      },
+      {
+        pillar_title: 'Catálogo de Vinhos Tintos Importados e Nacionais',
+        slug: 'catalogo-vinhos-tintos',
+        cluster_keywords: [
+          'vinho chileno importado',
+          'vinho tinto reserva vs gran reserva',
+          'vinhos pontuados robert parker',
+        ],
+        recommended_schema: 'CollectionPage, ItemList, Product',
+      },
+    ],
+    breadcrumbs_path: ['Home', 'Bebidas', 'Vinhos', 'Vinho Tinto'],
+  },
+  facets: {
+    topic: 'Vinho Tinto',
+    intent: ['Transacional', 'Comercial', 'Informacional'],
+    facets: [
+      {
+        attribute_name: 'Tipo de Uva',
+        slug: 'uva',
+        facet_type: 'multiselect',
+        options: [
+          'Cabernet Sauvignon',
+          'Malbec',
+          'Pinot Noir',
+          'Merlot',
+          'Syrah',
+          'Blend / Assemblage',
+        ],
+        search_priority: 'Alta',
+        recommended_filter_ui: 'checkbox',
+      },
+      {
+        attribute_name: 'País de Origem',
+        slug: 'pais',
+        facet_type: 'categorical',
+        options: ['Chile', 'Argentina', 'Brasil', 'Portugal', 'Itália', 'França', 'Espanha'],
+        search_priority: 'Alta',
+        recommended_filter_ui: 'checkbox',
+      },
+      {
+        attribute_name: 'Estilo de Doçura',
+        slug: 'estilo',
+        facet_type: 'categorical',
+        options: ['Seco', 'Meio Seco (Demi-Sec)', 'Suave', 'Fortificado'],
+        search_priority: 'Alta',
+        recommended_filter_ui: 'radio',
+      },
+      {
+        attribute_name: 'Maturação / Envelhecimento',
+        slug: 'maturacao',
+        facet_type: 'categorical',
+        options: ['Jovem', 'Reserva', 'Gran Reserva', 'Crianza', 'Passagem por Carvalho Francês'],
+        search_priority: 'Média',
+        recommended_filter_ui: 'badge_tag',
+      },
+      {
+        attribute_name: 'Faixa de Preço',
+        slug: 'preco',
+        facet_type: 'range',
+        options: ['Até R$ 50', 'R$ 50 a R$ 100', 'R$ 100 a R$ 250', 'Acima de R$ 250'],
+        search_priority: 'Alta',
+        recommended_filter_ui: 'slider',
+      },
+      {
+        attribute_name: 'Pontuação / Avaliação',
+        slug: 'pontuacao',
+        facet_type: 'categorical',
+        options: ['90+ Pontos Descorchados', '90+ Robert Parker', '95+ Ouro Mundial', 'Vivino 4.0+'],
+        search_priority: 'Média',
+        recommended_filter_ui: 'badge_tag',
+      },
+    ],
+    catalog_simulation: [
+      {
+        id: 'vin-01',
+        title: 'Casillero del Diablo Cabernet Sauvignon Reserva',
+        subcategory: 'Varietais e Uvas Nobres',
+        attributes: {
+          'Tipo de Uva': 'Cabernet Sauvignon',
+          'País de Origem': 'Chile',
+          'Estilo de Doçura': 'Seco',
+          'Faixa de Preço': 'R$ 50 a R$ 100',
+        },
+        price_estimate: 'R$ 64,90',
+      },
+      {
+        id: 'vin-02',
+        title: 'Catena Zapata Malbec Mendoza',
+        subcategory: 'Regiões e Terroirs Clássicos',
+        attributes: {
+          'Tipo de Uva': 'Malbec',
+          'País de Origem': 'Argentina',
+          'Estilo de Doçura': 'Seco',
+          'Faixa de Preço': 'R$ 100 a R$ 250',
+        },
+        price_estimate: 'R$ 189,00',
+      },
+      {
+        id: 'vin-03',
+        title: 'Bourgogne Pinot Noir Louis Jadot',
+        subcategory: 'Regiões e Terroirs Clássicos',
+        attributes: {
+          'Tipo de Uva': 'Pinot Noir',
+          'País de Origem': 'França',
+          'Estilo de Doçura': 'Seco',
+          'Faixa de Preço': 'Acima de R$ 250',
+        },
+        price_estimate: 'R$ 320,00',
+      },
+      {
+        id: 'vin-04',
+        title: 'Miolo Seleção Tempranillo & Touriga',
+        subcategory: 'Corpo e Estrutura Tânica',
+        attributes: {
+          'Tipo de Uva': 'Blend / Assemblage',
+          'País de Origem': 'Brasil',
+          'Estilo de Doçura': 'Seco',
+          'Faixa de Preço': 'Até R$ 50',
+        },
+        price_estimate: 'R$ 44,90',
+      },
+    ],
+    url_structure_recommendation: {
+      canonical_pattern: 'https://seusite.com/vinhos/vinho-tinto?uva=cabernet-sauvignon',
+      facet_indexing_rules:
+        'Indexar combinações de 1 faceta de alto volume (ex: /vinho-tinto/cabernet-sauvignon). Aplicar noindex,follow em filtros múltiplos (ex: ?preco=50-100&safra=2021) para preservar crawl budget.',
+    },
+  },
+};

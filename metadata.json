@@ -1,0 +1,8 @@
+{
+  "name": "Gerador de Taxonomia e Facetas",
+  "description": "Arquitetura da informação e SEO semântico avançado: gere taxonomias hierárquicas, facetas de metadados, grafos conceituais e simulação de filtros com Gemini.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
