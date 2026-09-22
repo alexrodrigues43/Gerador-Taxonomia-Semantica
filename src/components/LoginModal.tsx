@@ -36,8 +36,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       console.error('Google Auth Error:', err);
       if (err.code === 'auth/popup-closed-by-user') {
         setError('O popup do Google foi fechado antes de concluir.');
+      } else if (err.code === 'auth/unauthorized-domain') {
+        setError('Domínio não autorizado no Firebase. Adicione "localhost" aos domínios autorizados no Firebase Console.');
+      } else if (err.code === 'auth/operation-not-allowed') {
+        setError('O provedor de login do Google não está ativado no Firebase Console (Authentication > Sign-in method).');
       } else {
-        setError('Não foi possível autenticar com o Google. Tente novamente ou use e-mail e senha.');
+        setError(`Não foi possível autenticar com o Google (${err.code || 'erro desconhecido'}): ${err.message || 'Tente novamente ou use e-mail e senha.'}`);
       }
     } finally {
       setLoading(false);

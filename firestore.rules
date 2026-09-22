@@ -7,19 +7,54 @@ service cloud.firestore {
 
     function isSuperAdmin() {
       return isSignedIn() && (
-        request.auth.token.email == 'alexrodrigues43@gmail.com' ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+        request.auth.token.email == 'alexrodrigues43@gmail.com' &&
+        (request.auth.token.email_verified == true || request.auth.token.firebase.sign_in_provider == 'google.com')
       );
     }
 
     match /users/{userId} {
+      // Leitura permitida para o próprio usuário ou Super Admin
       allow read: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
-      allow create: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
-      allow update: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
+
+      // Criação: Super Admin pode criar livremente.
+      // Usuário comum só pode criar o seu próprio perfil com role=client e status=pending/trial.
+      allow create: if isSignedIn() && (
+        isSuperAdmin() || (
+          request.auth.uid == userId &&
+          request.resource.data.uid == userId &&
+          request.resource.data.role == 'client' &&
+          request.resource.data.status in ['pending', 'trial'] &&
+          request.resource.data.plan in ['trial', 'free'] &&
+          request.resource.data.email is string &&
+          request.resource.data.email.size() <= 120 &&
+          request.resource.data.displayName is string &&
+          request.resource.data.displayName.size() <= 100
+        )
+      );
+
+      // Atualização: Super Admin tem controle irrestrito.
+      // Usuário comum NÃO pode alterar role, status, plan, uid ou email.
+      // Usuário comum só pode atualizar displayName, lastLoginAt e usageCount.
+      allow update: if isSignedIn() && (
+        isSuperAdmin() || (
+          request.auth.uid == userId &&
+          request.resource.data.uid == resource.data.uid &&
+          request.resource.data.email == resource.data.email &&
+          request.resource.data.role == resource.data.role &&
+          request.resource.data.status == resource.data.status &&
+          request.resource.data.plan == resource.data.plan &&
+          request.resource.data.displayName is string &&
+          request.resource.data.displayName.size() <= 100 &&
+          request.resource.data.usageCount is int &&
+          request.resource.data.usageCount >= resource.data.usageCount
+        )
+      );
+
+      // Exclusão restrita exclusivamente ao Super Admin
       allow delete: if isSuperAdmin();
     }
 
+    // Qualquer outra coleção é acessível apenas pelo Super Admin por padrão
     match /{document=**} {
       allow read, write: if isSuperAdmin();
     }

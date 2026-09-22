@@ -3,13 +3,46 @@ import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Type } from '@google/genai';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 dotenv.config();
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
-app.use(express.json({ limit: '10mb' }));
+// Security headers with Helmet (configured to allow Vite dynamic scripts and D3 graphs)
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  })
+);
+
+// Body limit reduction to protect against memory exhaustion DoS
+app.use(express.json({ limit: '500kb' }));
+
+// General API Rate Limiting (200 req / 15 min per IP)
+const generalApiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 200,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { error: 'Muitas requisições. Por favor, aguarde alguns minutos e tente novamente.' },
+});
+
+// Strict AI Rate Limiting for Gemini generation (15 generations / 15 min per IP)
+const aiGenerationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 15,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: {
+    error: 'Limite de gerações atingido para este período (máximo de 15 a cada 15 minutos por usuário). Aguarde alguns instantes para gerar novas taxonomias.',
+  },
+});
+
+app.use('/api/', generalApiLimiter);
 
 // Lazy initialize Gemini client to avoid crashes if key is initially empty
 function getGeminiClient() {
@@ -38,8 +71,12 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Allowed values for input validation
+const ALLOWED_DOMAINS = ['ecommerce', 'seo_content', 'saas', 'general'];
+const ALLOWED_DEPTHS = ['standard', 'deep'];
+
 // Endpoint: Generate Full Semantic Taxonomy & Facets
-app.post('/api/generate-taxonomy-facets', async (req, res) => {
+app.post('/api/generate-taxonomy-facets', aiGenerationLimiter, async (req, res) => {
   try {
     const {
       topic,
@@ -50,6 +87,22 @@ app.post('/api/generate-taxonomy-facets', async (req, res) => {
 
     if (!topic || typeof topic !== 'string' || !topic.trim()) {
       return res.status(400).json({ error: 'O parâmetro "topic" é obrigatório.' });
+    }
+
+    const cleanTopic = topic.trim();
+    if (cleanTopic.length < 2) {
+      return res.status(400).json({ error: 'O tópico deve ter no mínimo 2 caracteres.' });
+    }
+    if (cleanTopic.length > 150) {
+      return res.status(400).json({ error: 'O tópico deve ter no máximo 150 caracteres para evitar sobrecarga.' });
+    }
+
+    if (domain && !ALLOWED_DOMAINS.includes(domain)) {
+      return res.status(400).json({ error: `Domínio inválido. Valores aceitos: ${ALLOWED_DOMAINS.join(', ')}` });
+    }
+
+    if (depth && !ALLOWED_DEPTHS.includes(depth)) {
+      return res.status(400).json({ error: `Nível de profundidade inválido. Valores aceitos: ${ALLOWED_DEPTHS.join(', ')}` });
     }
 
     const ai = getGeminiClient();
@@ -341,12 +394,21 @@ Critérios obrigatórios:
 });
 
 // Endpoint: Deep Dive / Expand a specific node
-app.post('/api/expand-node', async (req, res) => {
+app.post('/api/expand-node', aiGenerationLimiter, async (req, res) => {
   try {
     const { parent_topic, selected_node, node_type = 'subcategory', language = 'pt-BR' } = req.body;
 
-    if (!selected_node) {
-      return res.status(400).json({ error: 'selected_node é obrigatório.' });
+    if (!selected_node || typeof selected_node !== 'string' || !selected_node.trim()) {
+      return res.status(400).json({ error: 'selected_node é obrigatório e deve ser um texto.' });
+    }
+
+    const cleanNode = selected_node.trim();
+    if (cleanNode.length < 2 || cleanNode.length > 100) {
+      return res.status(400).json({ error: 'selected_node deve ter entre 2 e 100 caracteres.' });
+    }
+
+    if (parent_topic && (typeof parent_topic !== 'string' || parent_topic.trim().length > 100)) {
+      return res.status(400).json({ error: 'parent_topic inválido ou muito longo (máximo 100 caracteres).' });
     }
 
     const ai = getGeminiClient();
