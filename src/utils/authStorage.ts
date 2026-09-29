@@ -10,6 +10,7 @@ export const DEFAULT_USER: UserProfile = {
   role: 'admin',
   status: 'active',
   plan: 'lifetime',
+  toolUsageCount: 14,
   usageCount: 14,
   notes: 'Super Admin',
   createdAt: new Date().toISOString(),

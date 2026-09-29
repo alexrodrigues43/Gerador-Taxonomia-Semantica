@@ -1,16 +1,30 @@
 import React, { useState } from 'react';
-import { X, Lock, Mail, Key, ArrowRight, User, AlertCircle, Loader2, Sparkles, ExternalLink, Copy, Check, Info } from 'lucide-react';
-import { loginWithEmail, registerWithEmail, loginWithGoogle, SUPER_ADMIN_EMAIL } from '../lib/authService';
+import { 
+  X, 
+  Mail, 
+  Key, 
+  ArrowRight, 
+  User, 
+  AlertCircle, 
+  Loader2, 
+  Sparkles, 
+  ExternalLink, 
+  Copy, 
+  Check, 
+  Eye, 
+  EyeOff 
+} from 'lucide-react';
+import { loginWithEmail, registerWithEmail, loginWithGoogle, SUPER_ADMIN_EMAIL } from '../lib/firebase';
 import { SemanticoLogo } from './SemanticoLogo';
 
-interface LoginModalProps {
+export interface AuthModalProps {
   isOpen?: boolean;
   initialMode?: 'login' | 'register';
   onClose: () => void;
   onSuccess?: () => void;
 }
 
-export const LoginModal: React.FC<LoginModalProps> = ({
+export const LoginModal: React.FC<AuthModalProps> = ({
   isOpen = true,
   initialMode = 'login',
   onClose,
@@ -22,6 +36,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
@@ -54,15 +69,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
       if (code === 'auth/popup-closed-by-user') {
         setError(
-          isInIframe
-            ? 'A janela de autenticação do Google foi fechada antes de concluir (comum em navegadores que bloqueiam cookies embutidos em iframe). Você pode abrir o app em uma nova aba ou utilizar o login direto por E-mail e Senha.'
-            : 'A janela de autenticação do Google foi fechada antes de concluir. Tente novamente ou entre com e-mail e senha.'
+          currentHost && currentHost !== 'localhost'
+            ? `A janela do Google foi fechada antes de concluir. No domínio publicado (${currentHost}), certifique-se de que o domínio "${currentHost}" foi adicionado aos "Domínios Autorizados" no Firebase Console. Para entrar agora sem depender dessa configuração, utilize o formulário de E-mail e Senha abaixo.`
+            : 'A janela de autenticação do Google foi fechada antes de concluir. Tente novamente ou entre com e-mail e senha abaixo.'
         );
       } else if (code === 'auth/popup-blocked') {
         setError('O navegador bloqueou o popup do Google. Permita popups para este site ou utilize o login por E-mail e Senha.');
       } else if (code === 'auth/unauthorized-domain') {
         setError(
-          `O domínio "${currentHost}" não está nos domínios autorizados do Firebase Console (Authentication > Settings > Authorized domains).`
+          `O domínio "${currentHost}" não está nos domínios autorizados do Firebase Console (Authentication > Configurações > Domínios Autorizados).`
         );
       } else if (code === 'auth/operation-not-allowed') {
         setError('O provedor de login do Google não está ativado no Firebase Console (Authentication > Sign-in method).');
@@ -112,15 +127,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
         if (mode === 'login' && email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
           setError(
-            'E-mail ou senha incorretos. Se você ainda não definiu uma senha para o seu e-mail de Super Admin, clique na aba "Criar Conta" acima para cadastrar sua senha pela primeira vez!'
+            'E-mail ou senha incorretos. Se você ainda não definiu sua senha para este e-mail, clique na aba "Criar Conta" acima para registrar sua senha de acesso!'
           );
         } else {
           setError('E-mail ou senha incorretos. Se ainda não possui cadastro, alterne para a aba "Criar Conta".');
         }
       } else if (code === 'auth/email-already-in-use') {
-        setError('Este e-mail já está cadastrado! Alterne para a aba "Entrar" e informe sua senha.');
+        setError('Este e-mail já está cadastrado! Alterne para a aba "Fazer Login" e informe sua senha.');
       } else if (code === 'auth/weak-password') {
-        setError('A senha informada é fraca. Crie uma senha com letras e números.');
+        setError('A senha informada é fraca. Crie uma senha com letras e números (mínimo 6 caracteres).');
       } else if (code === 'auth/invalid-email') {
         setError('O endereço de e-mail é inválido.');
       } else {
@@ -165,7 +180,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           </div>
 
           <h2 className="text-xl font-bold tracking-tight text-white">
-            {mode === 'login' ? 'Entrar na Plataforma' : 'Criar Nova Conta'}
+            {mode === 'login' ? 'Fazer Login' : 'Criar Conta'}
           </h2>
           <p className="text-xs text-slate-400 mt-1">
             {mode === 'login'
@@ -184,7 +199,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   : 'text-slate-300 hover:text-white'
               }`}
             >
-              Entrar
+              Fazer Login
             </button>
             <button
               type="button"
@@ -224,14 +239,29 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 )}
 
                 {currentHost && (errorCode === 'auth/unauthorized-domain' || errorCode === 'auth/popup-closed-by-user') && (
-                  <button
-                    type="button"
-                    onClick={copyDomain}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-red-300 hover:bg-red-50 text-red-800 rounded-lg font-semibold transition-colors"
-                  >
-                    {copiedDomain ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                    {copiedDomain ? 'Domínio Copiado!' : `Copiar Domínio (${currentHost.slice(0, 18)}...)`}
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={copyDomain}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-red-300 hover:bg-red-50 text-red-800 rounded-lg font-semibold transition-colors cursor-pointer"
+                    >
+                      {copiedDomain ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copiedDomain ? 'Domínio Copiado!' : `Copiar Domínio (${currentHost})`}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        fillSuperAdminEmail();
+                        setError(null);
+                        setErrorCode(null);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-950 rounded-lg font-semibold transition-colors cursor-pointer"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                      Entrar com E-mail e Senha
+                    </button>
+                  </>
                 )}
 
                 {mode === 'login' && (errorCode === 'auth/user-not-found' || errorCode === 'auth/invalid-credential') && (
@@ -248,12 +278,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             </div>
           )}
 
-          {/* Google Button */}
+          {/* Google Button 1-Click */}
           <button
             type="button"
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 rounded-xl font-semibold text-xs shadow-xs transition-all hover:border-slate-400 disabled:opacity-60 mb-2"
+            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 rounded-xl font-semibold text-xs shadow-xs transition-all hover:border-slate-400 disabled:opacity-60 mb-2 cursor-pointer"
           >
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin text-slate-500" />
@@ -277,7 +307,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 />
               </svg>
             )}
-            <span>Entrar com Google</span>
+            <span>Entrar com Google 1-Click</span>
           </button>
 
           {/* Helper hint for iframe environment */}
@@ -290,7 +320,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           <div className="relative flex items-center justify-center my-3.5">
             <div className="border-t border-slate-200 w-full" />
             <span className="bg-white px-2.5 text-[11px] font-medium text-slate-400 uppercase tracking-wider">
-              ou com e-mail
+              ou com e-mail e senha
             </span>
           </div>
 
@@ -306,7 +336,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Seu nome"
+                    placeholder="Seu nome completo"
                     className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500"
                   />
                 </div>
@@ -348,13 +378,21 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               <div className="relative">
                 <Key className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Mínimo 6 caracteres"
                   required
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500"
+                  className="w-full pl-9 pr-10 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  title={showPassword ? 'Ocultar senha' : 'Ver senha'}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
@@ -370,7 +408,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 </>
               ) : (
                 <>
-                  <span>{mode === 'login' ? 'Entrar no Sistema' : 'Criar Conta / Definir Senha'}</span>
+                  <span>{mode === 'login' ? 'Entrar no Sistema' : 'Criar Conta / Solicitar Acesso'}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </>
               )}
@@ -386,3 +424,5 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     </div>
   );
 };
+
+export const AuthModal = LoginModal;

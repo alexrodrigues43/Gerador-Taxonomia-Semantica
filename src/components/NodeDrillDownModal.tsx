@@ -116,7 +116,7 @@ export const NodeDrillDownModal: React.FC<NodeDrillDownModalProps> = ({
                 ⚡ Gemini está aprofundando o nó <span className="text-amber-600">"{nodeName}"</span>...
               </p>
               <p className="text-xs text-slate-500">
-                Gerando subtópicos específicos, sinônimos LSI e micro-facetas exclusivas.
+                Gerando subtópicos específicos, termos semânticos e micro-facetas exclusivas.
               </p>
             </div>
           )}
@@ -189,12 +189,12 @@ export const NodeDrillDownModal: React.FC<NodeDrillDownModalProps> = ({
                 </div>
               )}
 
-              {/* Semantic Synonyms / LSI */}
+              {/* Termos Semânticos */}
               {data.semantic_synonyms && data.semantic_synonyms.length > 0 && (
                 <div className="space-y-2">
                   <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                     <Tag className="w-3.5 h-3.5 text-sky-600" />
-                    <span>Sinônimos Semânticos & LSI Keywords:</span>
+                    <span>Termos Semânticos:</span>
                   </span>
                   <div className="flex flex-wrap gap-1.5">
                     {data.semantic_synonyms.map((syn, idx) => (

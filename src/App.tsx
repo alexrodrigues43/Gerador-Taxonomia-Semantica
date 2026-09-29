@@ -48,6 +48,7 @@ export default function App() {
     isAdmin,
     isActive,
     isAuthenticated,
+    pendingCount,
   } = useAuth();
 
   // History state
@@ -177,6 +178,7 @@ export default function App() {
         user={user}
         activeTopic={analysis.taxonomy?.root_topic || analysis.topic}
         historyCount={history.length}
+        pendingCount={pendingCount}
         onOpenExport={handleOpenExport}
         onOpenHistory={() => setIsHistoryOpen(true)}
         onOpenAdmin={() => setIsAdminOpen(true)}

@@ -113,21 +113,23 @@ export interface DrillDownResponse {
   search_intent: string;
 }
 
-export type UserRole = 'admin' | 'client';
-export type UserStatus = 'pending' | 'active' | 'blocked' | 'expired';
-export type UserPlan = 'trial' | 'monthly' | 'annual' | 'lifetime';
+export type UserRole = "admin" | "client";
+export type UserStatus = "active" | "pending" | "blocked" | "expired";
+export type UserPlan = "trial" | "monthly" | "annual" | "lifetime";
 
 export interface UserProfile {
   uid: string;
   email: string;
   displayName: string;
+  photoURL?: string;
   role: UserRole;
   status: UserStatus;
   plan: UserPlan;
-  usageCount: number;
-  notes: string;
-  createdAt: string;
-  lastLoginAt: string;
+  createdAt: string;     // ISO String
+  lastLoginAt?: string;   // ISO String
+  notes?: string;         // Anotações internas do admin (ex: data do PIX, empresa, telefone)
+  toolUsageCount: number; // Contador de execuções de ferramentas
+  usageCount?: number;    // Retrocompatibilidade
 }
 
 export interface TaxonomyHistoryItem {

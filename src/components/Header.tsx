@@ -21,6 +21,7 @@ interface HeaderProps {
   user: UserProfile | null;
   activeTopic: string;
   historyCount: number;
+  pendingCount?: number;
   onOpenExport: () => void;
   onOpenHistory: () => void;
   onOpenAdmin: () => void;
@@ -33,6 +34,7 @@ export const Header: React.FC<HeaderProps> = ({
   user,
   activeTopic,
   historyCount,
+  pendingCount = 0,
   onOpenExport,
   onOpenHistory,
   onOpenAdmin,
@@ -208,10 +210,17 @@ export const Header: React.FC<HeaderProps> = ({
                             setUserMenuOpen(false);
                             onOpenAdmin();
                           }}
-                          className="w-full px-4 py-2 text-left hover:bg-slate-50 text-slate-700 flex items-center gap-2 cursor-pointer font-medium"
+                          className="w-full px-4 py-2 text-left hover:bg-slate-50 text-slate-700 flex items-center justify-between cursor-pointer font-medium"
                         >
-                          <ShieldCheck className="w-4 h-4 text-amber-500" />
-                          <span>Painel Administrativo</span>
+                          <div className="flex items-center gap-2">
+                            <ShieldCheck className="w-4 h-4 text-amber-500" />
+                            <span>Painel Administrativo</span>
+                          </div>
+                          {pendingCount > 0 && (
+                            <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-slate-950 font-bold text-[10px] animate-pulse">
+                              {pendingCount}
+                            </span>
+                          )}
                         </button>
                       )}
 

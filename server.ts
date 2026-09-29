@@ -419,7 +419,7 @@ Como Arquiteto de Informação e Taxonomias da Semântico, aprofunde a análise 
 Gere:
 1. "narrower_topics": 5 a 8 subtópicos ou variações mais específicas deste nó (nível 3/4 na hierarquia).
 2. "specific_facets": 2 a 3 atributos/facetas de filtro exclusivos ou altamente relevantes para este nó.
-3. "semantic_synonyms": 4 a 6 sinônimos semânticos e termos LSI (Latent Semantic Indexing) para SEO.
+3. "semantic_synonyms": 4 a 6 termos semânticos e sinônimos contextuais para SEO.
 4. "search_intent": Descrição concisa da intenção de quem pesquisa este subtema específico.
 Idioma: ${language === 'pt-BR' ? 'Português' : language}.
 `;
