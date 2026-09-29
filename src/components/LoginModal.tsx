@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Lock, Mail, Key, ArrowRight, User, AlertCircle, Loader2, Sparkles } from 'lucide-react';
+import { X, Lock, Mail, Key, ArrowRight, User, AlertCircle, Loader2, Sparkles, ExternalLink, Copy, Check, Info } from 'lucide-react';
 import { loginWithEmail, registerWithEmail, loginWithGoogle, SUPER_ADMIN_EMAIL } from '../lib/authService';
 import { SemanticoLogo } from './SemanticoLogo';
 
@@ -24,9 +24,24 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
+  const [copiedDomain, setCopiedDomain] = useState(false);
+
+  const currentHost = typeof window !== 'undefined' ? window.location.hostname : '';
+  const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const isInIframe = typeof window !== 'undefined' && window.self !== window.top;
+
+  const copyDomain = () => {
+    if (navigator.clipboard && currentHost) {
+      navigator.clipboard.writeText(currentHost);
+      setCopiedDomain(true);
+      setTimeout(() => setCopiedDomain(false), 2500);
+    }
+  };
 
   const handleGoogleLogin = async () => {
     setError(null);
+    setErrorCode(null);
     setLoading(true);
     try {
       await loginWithGoogle();
@@ -34,14 +49,25 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       onClose();
     } catch (err: any) {
       console.error('Google Auth Error:', err);
-      if (err.code === 'auth/popup-closed-by-user') {
-        setError('O popup do Google foi fechado antes de concluir.');
-      } else if (err.code === 'auth/unauthorized-domain') {
-        setError('Domínio não autorizado no Firebase. Adicione "localhost" aos domínios autorizados no Firebase Console.');
-      } else if (err.code === 'auth/operation-not-allowed') {
+      const code = err.code || '';
+      setErrorCode(code);
+
+      if (code === 'auth/popup-closed-by-user') {
+        setError(
+          isInIframe
+            ? 'A janela de autenticação do Google foi fechada antes de concluir (comum em navegadores que bloqueiam cookies embutidos em iframe). Você pode abrir o app em uma nova aba ou utilizar o login direto por E-mail e Senha.'
+            : 'A janela de autenticação do Google foi fechada antes de concluir. Tente novamente ou entre com e-mail e senha.'
+        );
+      } else if (code === 'auth/popup-blocked') {
+        setError('O navegador bloqueou o popup do Google. Permita popups para este site ou utilize o login por E-mail e Senha.');
+      } else if (code === 'auth/unauthorized-domain') {
+        setError(
+          `O domínio "${currentHost}" não está nos domínios autorizados do Firebase Console (Authentication > Settings > Authorized domains).`
+        );
+      } else if (code === 'auth/operation-not-allowed') {
         setError('O provedor de login do Google não está ativado no Firebase Console (Authentication > Sign-in method).');
       } else {
-        setError(`Não foi possível autenticar com o Google (${err.code || 'erro desconhecido'}): ${err.message || 'Tente novamente ou use e-mail e senha.'}`);
+        setError(`Não foi possível autenticar com o Google (${code || 'erro'}): ${err.message || 'Tente novamente ou use e-mail e senha.'}`);
       }
     } finally {
       setLoading(false);
@@ -51,6 +77,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setErrorCode(null);
 
     if (!email || !email.includes('@')) {
       setError('Por favor, digite um e-mail válido.');
@@ -80,10 +107,18 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     } catch (err: any) {
       console.error('Auth Error:', err);
       const code = err.code || '';
+      setErrorCode(code);
+
       if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
-        setError('E-mail ou senha incorretos.');
+        if (mode === 'login' && email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
+          setError(
+            'E-mail ou senha incorretos. Se você ainda não definiu uma senha para o seu e-mail de Super Admin, clique na aba "Criar Conta" acima para cadastrar sua senha pela primeira vez!'
+          );
+        } else {
+          setError('E-mail ou senha incorretos. Se ainda não possui cadastro, alterne para a aba "Criar Conta".');
+        }
       } else if (code === 'auth/email-already-in-use') {
-        setError('Este e-mail já está cadastrado. Tente fazer login.');
+        setError('Este e-mail já está cadastrado! Alterne para a aba "Entrar" e informe sua senha.');
       } else if (code === 'auth/weak-password') {
         setError('A senha informada é fraca. Crie uma senha com letras e números.');
       } else if (code === 'auth/invalid-email') {
@@ -111,9 +146,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         aria-hidden="true" 
       />
 
-      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-10 animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-10 animate-in zoom-in-95 duration-200 max-h-[92vh] flex flex-col">
         {/* Header */}
-        <div className="bg-slate-900 p-6 text-white relative">
+        <div className="bg-slate-900 p-6 text-white relative shrink-0">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
@@ -142,7 +177,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           <div className="flex bg-slate-800/90 rounded-lg p-1 mt-4 border border-slate-700/50">
             <button
               type="button"
-              onClick={() => { setMode('login'); setError(null); }}
+              onClick={() => { setMode('login'); setError(null); setErrorCode(null); }}
               className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
                 mode === 'login'
                   ? 'bg-amber-500 text-slate-950 shadow-xs'
@@ -153,7 +188,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => { setMode('register'); setError(null); }}
+              onClick={() => { setMode('register'); setError(null); setErrorCode(null); }}
               className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
                 mode === 'register'
                   ? 'bg-amber-500 text-slate-950 shadow-xs'
@@ -166,11 +201,50 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-6 overflow-y-auto">
           {error && (
-            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2 animate-in fade-in">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>{error}</span>
+            <div className="mb-4 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs animate-in fade-in space-y-2">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span className="leading-relaxed font-medium">{error}</span>
+              </div>
+
+              {/* Action buttons depending on error type */}
+              <div className="pt-2 border-t border-red-200/60 flex flex-wrap gap-2 text-[11px]">
+                {isInIframe && (
+                  <a
+                    href={currentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-red-100 hover:bg-red-200 text-red-900 rounded-lg font-semibold transition-colors"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Abrir em Nova Aba
+                  </a>
+                )}
+
+                {currentHost && (errorCode === 'auth/unauthorized-domain' || errorCode === 'auth/popup-closed-by-user') && (
+                  <button
+                    type="button"
+                    onClick={copyDomain}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-red-300 hover:bg-red-50 text-red-800 rounded-lg font-semibold transition-colors"
+                  >
+                    {copiedDomain ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedDomain ? 'Domínio Copiado!' : `Copiar Domínio (${currentHost.slice(0, 18)}...)`}
+                  </button>
+                )}
+
+                {mode === 'login' && (errorCode === 'auth/user-not-found' || errorCode === 'auth/invalid-credential') && (
+                  <button
+                    type="button"
+                    onClick={() => { setMode('register'); setError(null); }}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-lg font-semibold transition-colors"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Cadastrar Minha Senha Agora
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -179,7 +253,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             type="button"
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 rounded-xl font-semibold text-xs shadow-xs transition-all hover:border-slate-400 disabled:opacity-60 mb-4"
+            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 rounded-xl font-semibold text-xs shadow-xs transition-all hover:border-slate-400 disabled:opacity-60 mb-2"
           >
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin text-slate-500" />
@@ -206,7 +280,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             <span>Entrar com Google</span>
           </button>
 
-          <div className="relative flex items-center justify-center mb-4">
+          {/* Helper hint for iframe environment */}
+          {isInIframe && (
+            <p className="text-[10px] text-slate-400 text-center mb-3">
+              💡 No preview embutido, se o popup do Google fechar, use o formulário de e-mail/senha abaixo ou abra em nova aba.
+            </p>
+          )}
+
+          <div className="relative flex items-center justify-center my-3.5">
             <div className="border-t border-slate-200 w-full" />
             <span className="bg-white px-2.5 text-[11px] font-medium text-slate-400 uppercase tracking-wider">
               ou com e-mail
@@ -280,7 +361,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 py-2.5 px-4 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-950 rounded-xl font-bold text-xs shadow-xs transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+              className="w-full mt-2 py-2.5 px-4 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-950 rounded-xl font-bold text-xs shadow-xs transition-colors flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer"
             >
               {loading ? (
                 <>
@@ -289,7 +370,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 </>
               ) : (
                 <>
-                  <span>{mode === 'login' ? 'Entrar no Sistema' : 'Solicitar Cadastro'}</span>
+                  <span>{mode === 'login' ? 'Entrar no Sistema' : 'Criar Conta / Definir Senha'}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </>
               )}
@@ -298,7 +379,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
           {/* Quick Notice for Super Admin */}
           <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 leading-relaxed text-center">
-            Super Admin <strong className="text-slate-700">{SUPER_ADMIN_EMAIL}</strong> é reconhecido automaticamente com acesso vitalício ilimitado.
+            Super Admin <strong className="text-slate-700">{SUPER_ADMIN_EMAIL}</strong> possui reconhecimento automático com acesso vitalício ilimitado.
           </div>
         </div>
       </div>

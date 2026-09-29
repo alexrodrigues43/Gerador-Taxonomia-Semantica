@@ -24,15 +24,20 @@ export const SUPER_ADMIN_EMAIL = 'alexrodrigues43@gmail.com';
  * Automatically promotes alexrodrigues43@gmail.com to Super Admin with lifetime access.
  */
 export async function syncUserProfile(fbUser: FirebaseUser): Promise<UserProfile> {
-  const userRef = doc(db, 'users', fbUser.uid);
-  const userSnap = await getDoc(userRef);
-
   const emailLower = (fbUser.email || '').toLowerCase().trim();
   const isSuperAdmin = emailLower === SUPER_ADMIN_EMAIL.toLowerCase();
-
   const now = new Date().toISOString();
 
-  if (!userSnap.exists()) {
+  let userSnap = null;
+  const userRef = doc(db, 'users', fbUser.uid);
+
+  try {
+    userSnap = await getDoc(userRef);
+  } catch (err) {
+    console.warn('Não foi possível ler o perfil do Firestore diretamente:', err);
+  }
+
+  if (!userSnap || !userSnap.exists()) {
     const newUser: UserProfile = {
       uid: fbUser.uid,
       email: fbUser.email || '',
@@ -46,7 +51,11 @@ export async function syncUserProfile(fbUser: FirebaseUser): Promise<UserProfile
       lastLoginAt: now,
     };
 
-    await setDoc(userRef, newUser);
+    try {
+      await setDoc(userRef, newUser, { merge: true });
+    } catch (err) {
+      console.warn('Aviso ao gravar perfil no Firestore:', err);
+    }
     return newUser;
   }
 
@@ -63,7 +72,11 @@ export async function syncUserProfile(fbUser: FirebaseUser): Promise<UserProfile
     if (existing.plan !== 'lifetime') updates.plan = 'lifetime';
   }
 
-  await updateDoc(userRef, updates);
+  try {
+    await updateDoc(userRef, updates);
+  } catch (err) {
+    console.warn('Aviso ao atualizar perfil no Firestore:', err);
+  }
   return { ...existing, ...updates };
 }
 

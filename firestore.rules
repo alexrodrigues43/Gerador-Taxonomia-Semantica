@@ -6,10 +6,7 @@ service cloud.firestore {
     }
 
     function isSuperAdmin() {
-      return isSignedIn() && (
-        request.auth.token.email == 'alexrodrigues43@gmail.com' &&
-        (request.auth.token.email_verified == true || request.auth.token.firebase.sign_in_provider == 'google.com')
-      );
+      return isSignedIn() && request.auth.token.email.lower() == 'alexrodrigues43@gmail.com';
     }
 
     match /users/{userId} {
